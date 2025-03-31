@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Password Strength Analyzer</h1>
+            <p>Check how strong your password is and get recommendations to improve it</p>
+        </header>
+        
+        <main>
+            <div class="password-input">
+                <label for="password">Enter your password:</label>
+                <div class="input-group">
+                    <input type="password" id="password" name="password" placeholder="Type your password here">
+                    <button id="toggle-password" type="button">Show</button>
+                </div>
+                <button id="analyze-btn">Analyze Password</button>
+            </div>
+            
+            <div class="results" id="results" style="display: none;">
+                <div class="score-container">
+                    <div class="gauge">
+                        <div class="gauge-inner" id="gauge-inner">
+                            <span id="score-value">0</span>
+                        </div>
+                    </div>
+                    <div class="strength-label" id="strength-label">Weak</div>
+                </div>
+                
+                <div class="details-container">
+                    <h2>Password Analysis</h2>
+                    <div class="password-details">
+                        <div class="detail-group">
+                            <div class="detail">
+                                <span class="detail-label">Length:</span>
+                                <span class="detail-value" id="length-value">0</span>
+                                <span class="detail-icon" id="length-icon">❌</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Uppercase Letters:</span>
+                                <span class="detail-icon" id="uppercase-icon">❌</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Lowercase Letters:</span>
+                                <span class="detail-icon" id="lowercase-icon">❌</span>
+                            </div>
+                        </div>
+                        <div class="detail-group">
+                            <div class="detail">
+                                <span class="detail-label">Numbers:</span>
+                                <span class="detail-icon" id="numbers-icon">❌</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Special Characters:</span>
+                                <span class="detail-icon" id="special-icon">❌</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Entropy:</span>
+                                <span class="detail-value" id="entropy-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="feedback-container">
+                        <h3>Recommendations:</h3>
+                        <ul id="feedback-list"></ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Password Analyzer - Built for security-conscious users</p>
+        </footer>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</body>
+</html>
