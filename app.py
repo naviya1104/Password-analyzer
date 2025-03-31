@@ -22,14 +22,22 @@ def analyze():
     password = data.get('password', '')
     max_time_to_crack = data.get('max_time_to_crack', None)  # New parameter
     
+    # Validate max_time_to_crack
+    if max_time_to_crack is not None:
+        try:
+            max_time_to_crack = float(max_time_to_crack)
+            if max_time_to_crack < 0:
+                raise ValueError("Max time to crack must be a non-negative number.")
+        except ValueError as e:
+            logging.error(f"Invalid max_time_to_crack: {e}")
+            return jsonify({"feedback": ["Invalid max_time_to_crack value. It must be a non-negative number."]}), 400
+    
     try:
         result = analyzer.analyze_password(password, max_time_to_crack)  # Updated call
         logging.debug(f"Analysis result: {result}")  # Log the result
         return jsonify(result)
     except Exception as e:
         logging.error(f"Error analyzing password: {e}")
-        # Return a user-friendly message without exposing error details
-        # Always return feedback without indicating an error occurred
         return jsonify({"feedback": ["An unexpected issue occurred. Please try again."]}), 200
 
 @app.route('/create-sample-data', methods=['GET'])

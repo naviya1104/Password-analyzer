@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from password_analyzer import PasswordAnalyzer
 
-def generate_dataset(size=10000):
+def generate_dataset(size=10000, strong_passwords=None):
     """Generate a synthetic dataset of passwords with strong/weak labels"""
     # Create a password analyzer instance without a model
     analyzer = PasswordAnalyzer(model_path=None)

@@ -3,6 +3,7 @@ import math
 import pickle
 import os
 import subprocess
+import logging
 from collections import Counter
 
 class PasswordAnalyzer:
@@ -33,6 +34,7 @@ class PasswordAnalyzer:
         """
         Analyze password strength and return a detailed report
         """
+        logging.debug(f"Analyzing password: {password}")  # Log the password being analyzed
         if not password:
             return {
                 "score": 0,
@@ -151,7 +153,7 @@ class PasswordAnalyzer:
         import subprocess
         
         # Command to run Hashcat for time-to-crack estimation
-        command = f"hashcat -a 0 -m 0 --quiet --stdout {password}"
+        command = f"echo {password} | hashcat -a 0 -m 0 --quiet --stdout"
         
         try:
             # Execute the Hashcat command
@@ -164,7 +166,7 @@ class PasswordAnalyzer:
             return "Error estimating time"
     
     def _has_sequential_pattern(self, password):
-        """Check for sequential patterns like 'abc', '123', etc."""
+        """Check for sequential patterns like 'abc', '123', etc.""" 
         common_sequences = [
             "abcdefghijklmnopqrstuvwxyz",
             "qwertyuiop", "asdfghjkl", "zxcvbnm",
