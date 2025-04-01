@@ -1,101 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Strength Analyzer</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Password Strength Analyzer</h1>
-            <p>Check how strong your password is and get recommendations to improve it</p>
-            <a href="#" id="settings-btn" class="settings-btn">⚙️ Settings</a>
-        </header>
-        
-        <main>
-            <div class="password-input">
-                <label for="password">Enter your password:</label>
-                <div class="input-group">
-                    <input type="password" id="password" name="password" placeholder="Type your password here">
-                    <button id="toggle-password" type="button">Show</button>
-                </div>
-                <button id="analyze-btn">Analyze Password</button>
-            </div>
-            
-            <div class="results" id="results" style="display: none;">
-                <div class="score-container">
-                    <div class="gauge">
-                        <div class="gauge-inner" id="gauge-inner">
-                            <span id="score-value">0</span>
-                        </div>
-                    </div>
-                    <div class="strength-label" id="strength-label">Weak</div>
-                </div>
-                
-                <div class="details-container">
-                    <h2>Password Analysis</h2>
-                    <div class="password-details">
-                        <div class="detail-group">
-                            <div class="detail">
-                                <span class="detail-label">Length:</span>
-                                <span class="detail-value" id="length-value">0</span>
-                                <span class="detail-icon" id="length-icon">❌</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Uppercase Letters:</span>
-                                <span class="detail-icon" id="uppercase-icon">❌</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Lowercase Letters:</span>
-                                <span class="detail-icon" id="lowercase-icon">❌</span>
-                            </div>
-                        </div>
-                        <div class="detail-group">
-                            <div class="detail">
-                                <span class="detail-label">Numbers:</span>
-                                <span class="detail-icon" id="numbers-icon">❌</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Special Characters:</span>
-                                <span class="detail-icon" id="special-icon">❌</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Entropy:</span>
-                                <span class="detail-value" id="entropy-value">0</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="feedback-container">
-                        <h3>Recommendations:</h3>
-                        <ul id="feedback-list"></ul>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="ai-recommendations-container" style="display: none;"></div>
-        </main>
-        
-        <footer>
-            <p>Password Analyzer - Built for security-conscious users</p>
-        </footer>
+<!-- Add this section to your index.html file, inside the results div but after the feedback-container -->
+<div class="ai-recommendations" id="ai-recommendations" style="display: none;">
+    <h3>Smart Analysis</h3>
+    
+    <div class="ai-section">
+        <h4>Why Your Password Is Vulnerable:</h4>
+        <ul id="ai-vulnerabilities-list"></ul>
     </div>
     
-    <div id="settings-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Settings</h2>
-            <div class="form-group">
-                <label for="gemini-api-key">Gemini API Key:</label>
-                <input type="password" id="gemini-api-key" placeholder="Enter your API key">
-                <button id="save-api-key">Save</button>
+    <div class="ai-section">
+        <h4>Security Risks:</h4>
+        <ul id="ai-explanation-list"></ul>
+    </div>
+    
+    <div class="ai-section">
+        <h4>Suggestions to Improve:</h4>
+        <ul id="ai-suggestions-list"></ul>
+    </div>
+    
+    <div class="ai-section">
+        <h4>Better Alternative:</h4>
+        <div class="example-container">
+            <p>Current password strength: <span class="current-strength" id="current-strength">Weak</span></p>
+            <div class="password-comparison">
+                <div class="password-box" id="original-password">
+                    <span class="password-label">Original:</span>
+                    <span class="password-value">*********</span>
+                </div>
+                <div class="arrow">→</div>
+                <div class="password-box" id="suggested-password">
+                    <span class="password-label">Suggested:</span>
+                    <span class="password-value" id="ai-example"></span>
+                    <button id="copy-suggestion" class="copy-btn">Copy</button>
+                </div>
             </div>
-            <p class="info-text">Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a></p>
+            <p class="time-to-crack">Estimated time to crack: <span id="time-to-crack-display">Unknown</span></p>
         </div>
     </div>
-    
-    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
-</body>
-</html>
+</div>
