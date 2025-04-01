@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const specialIcon = document.getElementById('special-icon');
     const entropyValue = document.getElementById('entropy-value');
     const feedbackList = document.getElementById('feedback-list');
-    const timeToCrackValue = document.getElementById('time-to-crack-value'); // New element for time-to-crack
-    
+    const timeToCrackValue = document.getElementById('time-to-crack-value');
+
     // Toggle password visibility
     togglePasswordBtn.addEventListener('click', function() {
         if (passwordInput.type === 'password') {
@@ -47,19 +47,23 @@ document.addEventListener('DOMContentLoaded', function() {
     function analyzePassword() {
         const password = passwordInput.value;
         
-        // Don't analyze if password is empty
         if (!password) {
             alert('Please enter a password to analyze');
             return;
         }
         
-        // Send password to backend for analysis
+        // Get API key if available
+        const apiKey = localStorage.getItem('gemini_api_key');
+        
         fetch('/analyze', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ password: password }),
+            body: JSON.stringify({ 
+                password: password,
+                api_key: apiKey  // Send API key to backend
+            }),
         })
         .then(response => response.json())
         .then(data => {
@@ -67,27 +71,21 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error analyzing password:', error);
-            // Handle error silently, you can log it or display a message in the results section
-            console.error('Error analyzing password:', error);
             feedbackList.innerHTML = '<li>An unexpected error occurred. Please try again.</li>';
         });
     }
     
     function displayResults(data) {
-        // Show results section
         resultsSection.style.display = 'block';
         
         // Update score and strength
         scoreValue.textContent = data.score;
         strengthLabel.textContent = data.strength;
-        
-        // Update strength class
         strengthLabel.className = 'strength-label';
         
         const strengthClass = data.strength.toLowerCase().replace(' ', '-');
         strengthLabel.classList.add(strengthClass);
         
-        // Update gauge color based on score
         let gaugeColor;
         if (data.score < 25) {
             gaugeColor = '#e74c3c'; // very weak (red)
@@ -101,12 +99,10 @@ document.addEventListener('DOMContentLoaded', function() {
             gaugeColor = '#27ae60'; // very strong (dark green)
         }
         
-        // Update gauge using conic gradient
         const angle = (data.score / 100) * 360;
         gaugeInner.style.background = `conic-gradient(${gaugeColor} 0deg ${angle}deg, var(--light-color) ${angle}deg 360deg)`;
         scoreValue.style.color = gaugeColor;
         
-        // Update password details
         lengthValue.textContent = data.length;
         lengthIcon.textContent = data.length >= 8 ? '✅' : '❌';
         
@@ -116,19 +112,56 @@ document.addEventListener('DOMContentLoaded', function() {
         specialIcon.textContent = data.has_special ? '✅' : '❌';
         
         entropyValue.textContent = data.entropy;
+        timeToCrackValue.textContent = data.time_to_crack;
         
-        // Display time-to-crack
-        timeToCrackValue.textContent = data.time_to_crack; // Display the estimated time-to-crack
-        
-        // Update feedback list
         feedbackList.innerHTML = '';
         data.feedback.forEach(item => {
             const li = document.createElement('li');
             li.textContent = item;
             feedbackList.appendChild(li);
         });
-        
-        // Scroll to results
-        resultsSection.scrollIntoView({ behavior: 'smooth' });
     }
+
+    // Settings modal functionality
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeModalBtn = document.querySelector('.close');
+    const apiKeyInput = document.getElementById('gemini-api-key');
+    const saveApiKeyBtn = document.getElementById('save-api-key');
+
+    // Open settings modal
+    settingsBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        settingsModal.style.display = 'block';
+        
+        // Load saved API key if exists
+        const savedApiKey = localStorage.getItem('gemini_api_key');
+        if (savedApiKey) {
+            apiKeyInput.value = savedApiKey;
+        }
+    });
+
+    // Close modal
+    closeModalBtn.addEventListener('click', function() {
+        settingsModal.style.display = 'none';
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+        if (event.target === settingsModal) {
+            settingsModal.style.display = 'none';
+        }
+    });
+
+    // Save API key
+    saveApiKeyBtn.addEventListener('click', function() {
+        const apiKey = apiKeyInput.value.trim();
+        if (apiKey) {
+            localStorage.setItem('gemini_api_key', apiKey);
+            alert('API key saved successfully!');
+            settingsModal.style.display = 'none';
+        } else {
+            alert('Please enter a valid API key');
+        }
+    });
 });

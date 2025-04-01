@@ -5,6 +5,20 @@ import os
 import subprocess
 import logging
 from collections import Counter
+import requests
+import json
+from dotenv import load_dotenv
+
+# Load environment variables from the .env file
+load_dotenv()
+
+# Access the Gemini API key
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+
+if GEMINI_API_KEY:
+    logging.info("Gemini API key loaded successfully!")
+else:
+    logging.warning("Gemini API key not found!")
 
 class PasswordAnalyzer:
     def __init__(self, model_path=None):
@@ -18,7 +32,7 @@ class PasswordAnalyzer:
                 with open(model_path, 'rb') as f:
                     self.password_model = pickle.load(f)
             except Exception as e:
-                print(f"Error loading model: {e}")
+                logging.error(f"Error loading model: {e}")
         
         # Load common passwords
         data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 
@@ -28,8 +42,25 @@ class PasswordAnalyzer:
                 with open(data_path, 'r', encoding='utf-8', errors='ignore') as f:
                     self.common_passwords = set(line.strip() for line in f)
             except Exception as e:
-                print(f"Error loading common passwords: {e}")
+                logging.error(f"Error loading common passwords: {e}")
     
+    def get_model_accuracy(self):
+        """Retrieve the accuracy of the trained model."""
+        model_path = os.path.join('static', 'models', 'password_model.pkl')
+        if os.path.exists(model_path):
+            with open(model_path, 'rb') as f:
+                model = pickle.load(f)
+            # Assuming the model has a score method
+            try:
+                accuracy = model.score(X_test, y_test)  # Placeholder for actual test data
+            except Exception as e:
+                logging.error(f"Error calculating model accuracy: {e}")
+                return None
+            return accuracy
+        else:
+            logging.warning("Model not found.")
+            return None
+
     def analyze_password(self, password, max_time_to_crack=None):
         """
         Analyze password strength and return a detailed report
@@ -132,7 +163,7 @@ class PasswordAnalyzer:
         if not feedback:
             feedback.append("Password looks good!")
         
-        return {
+        result = {
             "time_to_crack": time_to_crack,
             "score": round(score),
             "strength": strength,
@@ -145,8 +176,109 @@ class PasswordAnalyzer:
             "is_common": is_common,
             "has_repeated": has_repeated_chars,
             "has_sequential": has_sequential_chars,
-            "feedback": feedback
+            "feedback": feedback,
+            "password_masked": '*' * length
         }
+        
+        # Get AI-powered recommendations
+        try:
+            ai_recommendations = self.get_genai_recommendations(result)
+        except Exception as e:
+            logging.error(f"Error retrieving AI recommendations: {e}")
+            ai_recommendations = None
+        if ai_recommendations:
+            result.update(ai_recommendations)
+    
+        return result
+    
+    def get_genai_recommendations(self, analysis_result):
+        """Get AI-powered recommendations using Google's Gemini API"""
+        # Construct the prompt
+        strength = analysis_result['strength']
+        password_masked = analysis_result.get('password_masked', '********')  # Don't use actual password!
+        
+        # Create prompt with analysis information but without the actual password
+        prompt = f"""
+        Analyze this password and provide specific recommendations:
+        - Strength rating: {strength}
+        - Length: {analysis_result['length']}
+        - Has uppercase: {analysis_result['has_uppercase']}
+        - Has lowercase: {analysis_result['has_lowercase']}
+        - Has digits: {analysis_result['has_digits']}
+        - Has special characters: {analysis_result['has_special']}
+        - Is common password: {analysis_result['is_common']}
+        - Has repeated characters: {analysis_result['has_repeated']}
+        - Has sequential patterns: {analysis_result['has_sequential']}
+        - Entropy score: {analysis_result['entropy']}
+        
+        Provide:
+        1. A brief explanation of WHY this password is {strength.lower()}
+        2. Specific suggestions to improve it (if needed)
+        3. An example of a stronger password with similar pattern (if needed)
+        """
+        
+        # API request payload
+        payload = {
+            "contents": [{
+                "parts": [{
+                    "text": prompt
+                }]
+            }]
+        }
+        
+        # Call Gemini API
+        try:
+            headers = {
+                "Content-Type": "application/json"
+            }
+            # Use Gemini API with your GEMINI_API_KEY
+            response = requests.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}",
+                headers=headers,
+                data=json.dumps(payload)
+            )
+            
+            logging.debug(f"Gemini API response: {response.status_code} - {response.text}")  # Log the response
+            if response.status_code == 200 and 'candidates' in response.json():
+                result = response.json()
+                # Extract the text from the response
+                if 'candidates' in result and len(result['candidates']) > 0:
+                    genai_text = result['candidates'][0]['content']['parts'][0]['text']
+                    
+                    # Format the response
+                    reasons = []
+                    suggestions = []
+                    example = None
+                    
+                    # Simple parsing, could be improved with more structured prompting
+                    sections = genai_text.split('\n\n')
+                    for section in sections:
+                        if "why" in section.lower() or "explanation" in section.lower():
+                            reasons = [line.strip('- ') for line in section.splitlines() if line.strip().startswith('-')]
+                        elif "suggestion" in section.lower() or "improve" in section.lower():
+                            suggestions = [line.strip('- ') for line in section.splitlines() if line.strip().startswith('-')]
+                        elif "example" in section.lower() or "stronger password" in section.lower():
+                            example_lines = [line for line in section.splitlines() if ':' in line]
+                            if example_lines:
+                                example = example_lines[0].split(':', 1)[1].strip()
+                    
+                    logging.debug(f"Parsed AI recommendations: {reasons}, {suggestions}, {example}")  # Log parsed recommendations
+                    return {
+                        "ai_explanation": reasons,
+                        "ai_suggestions": suggestions,
+                        "ai_example": example,
+                        "ai_full_response": genai_text
+                    }
+                else:
+                    logging.error(f"No valid candidates returned from Gemini API")
+                    return None
+            else:
+                logging.error(f"API Error: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            logging.error(f"Error calling Gemini API: {e}")
+            return None
     
     def _estimate_time_to_crack(self, password):
         """Estimate time-to-crack using Hashcat"""
@@ -162,7 +294,7 @@ class PasswordAnalyzer:
             output = result.stdout.strip()
             return output  # Return the output from Hashcat
         except Exception as e:
-            print(f"Error estimating time-to-crack: {e}")
+            logging.error(f"Error estimating time-to-crack: {e}")
             return "Error estimating time"
     
     def _has_sequential_pattern(self, password):

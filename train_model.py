@@ -54,7 +54,17 @@ def generate_dataset(size=10000, strong_passwords=None):
     
     return features, all_labels
 
-def train_model():
+def load_model(model_path):
+    """Load the trained model from the specified path."""
+    if os.path.exists(model_path):
+        with open(model_path, 'rb') as f:
+            model = pickle.load(f)
+        return model
+    else:
+        logging.warning("Model not found.")
+        return None
+
+def train_model(model_path='static/models/password_model.pkl'):
     print("Generating dataset...")
     X, y = generate_dataset(size=10000)
     

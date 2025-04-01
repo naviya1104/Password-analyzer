@@ -11,6 +11,7 @@
         <header>
             <h1>Password Strength Analyzer</h1>
             <p>Check how strong your password is and get recommendations to improve it</p>
+            <a href="#" id="settings-btn" class="settings-btn">⚙️ Settings</a>
         </header>
         
         <main>
@@ -73,11 +74,26 @@
                     </div>
                 </div>
             </div>
+            
+            <div id="ai-recommendations-container" style="display: none;"></div>
         </main>
         
         <footer>
             <p>Password Analyzer - Built for security-conscious users</p>
         </footer>
+    </div>
+    
+    <div id="settings-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Settings</h2>
+            <div class="form-group">
+                <label for="gemini-api-key">Gemini API Key:</label>
+                <input type="password" id="gemini-api-key" placeholder="Enter your API key">
+                <button id="save-api-key">Save</button>
+            </div>
+            <p class="info-text">Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a></p>
+        </div>
     </div>
     
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>

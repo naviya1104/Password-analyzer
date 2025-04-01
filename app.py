@@ -8,19 +8,58 @@ app = Flask(__name__)
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
+# Load environment variable for Gemini API Key
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+
+if not GEMINI_API_KEY:
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    except ImportError:
+        logging.warning("dotenv not installed, can't load .env file")
+
+# Warn if API key is missing
+if not GEMINI_API_KEY:
+    logging.warning("No Gemini API key found. AI recommendations will be disabled.")
+
 # Initialize password analyzer
 model_path = os.path.join('static', 'models', 'password_model.pkl')
-analyzer = PasswordAnalyzer(model_path=model_path if os.path.exists(model_path) else None)
+# Initialize the PasswordAnalyzer with the correct model path
+analyzer = PasswordAnalyzer(model_path=model_path)
+
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/model-accuracy', methods=['GET'])
+def model_accuracy():
+    """Retrieve the accuracy of the trained model."""
+    try:
+        model_path = os.path.join('static', 'models', 'password_model.pkl')
+        if os.path.exists(model_path):
+            with open(model_path, 'rb') as f:
+                model = pickle.load(f)
+            # Assuming the model has a method to retrieve accuracy
+            accuracy = analyzer.get_model_accuracy()  # Call the method to get accuracy
+            return jsonify({"accuracy": accuracy}), 200
+        else:
+            return jsonify({"error": "Model not found."}), 404
+    except Exception as e:
+        logging.error(f"Error retrieving model accuracy: {e}")
+        return jsonify({"error": "An error occurred while retrieving model accuracy."}), 500
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
     data = request.get_json()
     password = data.get('password', '')
     max_time_to_crack = data.get('max_time_to_crack', None)  # New parameter
+    api_key = data.get('api_key')
+    
+    # Set API key if provided
+    if api_key:
+        os.environ['GEMINI_API_KEY'] = api_key
     
     # Validate max_time_to_crack
     if max_time_to_crack is not None:
@@ -66,8 +105,4 @@ def create_sample_data():
     return jsonify({"success": True, "message": "Sample data already exists"})
 
 if __name__ == '__main__':
-    # Create sample data file if needed
-    app.route('/create-sample-data')(lambda: create_sample_data())
-    
-    # Run the app
     app.run(debug=True)
